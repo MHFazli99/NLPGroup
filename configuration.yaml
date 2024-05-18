@@ -1,0 +1,17 @@
+connectors:
+  matrix:
+    # Required
+    mxid: "@bot_regex_clf:matrix.org"
+    password: "Bot-regex-clf17"
+    rooms:
+      'main': '#my-nlp-hw2-room:matrix.org'
+    # Optional
+    homeserver: "https://matrix.org"
+    nick: "NLP_HW2_17"  # The nick will be set on startup
+    enable_encryption: True
+
+skills:
+  tooti:
+    path: skills/tooti_skill.py
+  accept_invites:
+    path: skills/accept_invite.py
