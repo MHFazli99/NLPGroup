@@ -1,12 +1,12 @@
 connectors:
   matrix:
     # Required
-    mxid: "@bot_regex_clf:matrix.org"
-    password: "Bot-regex-clf17"
+    mxid: "@bot_regex_clf:bot.parsi.ai"
+    password: "M@hdiF@zli17"
     rooms:
-      'main': '#my-nlp-hw2-room:matrix.org'
+      'main': '#matrix:bot.parsi.ai'
     # Optional
-    homeserver: "https://matrix.org"
+    homeserver: "https://bot.parsi.ai"
     nick: "NLP_HW2_17"  # The nick will be set on startup
     enable_encryption: True
 
