@@ -8,7 +8,7 @@ from collections import defaultdict, Counter
 class RegexClassifier(object):
     
     def __init__(self):
-        self.resources = r"C:\Users\Mohammad\Desktop\address_extractor\resources"
+        self.resources = r"C:\Users\Mohammad\Desktop\address_extractor"
         self.__load_dicts()
         
         self.match_address()
@@ -23,31 +23,30 @@ class RegexClassifier(object):
         self.add_pattern('phone', self.phone_regex)
         
     def __load_dicts(self):
-        with open("{0}/ambiguity_countries.csv".format(self.resources), "r", encoding='utf8') as f:
-            self.ambiguity_countries = {
-                line.replace("\n", "").strip().split(",")[0]:
-                int(line.replace("\n", "").strip().split(",")[1])
-                for line in f.readlines()}
         with open("{0}/countries.pickle".format(self.resources), "rb") as f:
-            countries = [str(num) for num in pickle.load(f)]
+            countries = [str(name) for name in pickle.load(f)]
             self.countries = "\\b(" + '|'.join(countries) + ")\\b"
 
         with open("{0}/provinces.pickle".format(self.resources), "rb") as f:
-            province = [str(num) for num in pickle.load(f)]
+            province = [str(name) for name in pickle.load(f)]
             self.province = "\\b(" + '|'.join(province) + ")\\b"
 
-        with open("{0}/cities_phone.pickle".format(self.resources), "rb") as f:
-            cities_phone = [str(num) for num in pickle.load(f)]
-            self.cities_phone_prefix = "(" + '|'.join(cities_phone) + ")"
+        with open("{0}/phone_prefix.pickle".format(self.resources), "rb") as f:
+            phone_prefix = [str(name) for name in pickle.load(f)]
+            self.phone_prefix = "(" + '|'.join(phone_prefix) + ")"
 
-        with open("{0}/cities_name.pickle".format(self.resources), "rb") as f:
-            self.cities = [str(num) for num in pickle.load(f)]
+        with open("{0}/cities.pickle".format(self.resources), "rb") as f:
+            self.cities = [str(name) for name in pickle.load(f)]
             self.cities = "\\b(" + '|'.join(self.cities) + ")\\b"
 
         with open("{0}/places.pickle".format(self.resources), "rb") as f:
-            places = [str(num) for num in pickle.load(f)]
+            places = [str(name) for name in pickle.load(f)]
             self.places = "\\b(" + '|'.join(places) + ")\\b"
- 
+        
+        with open("{0}/ambiguity_countries.pickle".format(self.resources), "rb") as f:
+            ambiguity_countries = [str(name) for name in pickle.load(f)]
+            self.ambiguity_countries = "\\b(" + '|'.join(ambiguity_countries) + ")\\b"
+
             
     def standardize_query(self, text: str):
         words = text.split(" ")
@@ -82,10 +81,12 @@ class RegexClassifier(object):
                 self.start_addresskeywords.split("|")
 
         words = text.split(" ")
-        for i in range(len(words)) :
-            if words[i] in self.ambiguity_countries and\
-            self.ambiguity_countries[words[i]] == 0:
-                if not list(set(signs) & set([words[i-2], words[i-1], words[i+1], words[i+2]])):
+        for i in range(len(words)):
+            if re.search(self.ambiguity_countries, words[i]):
+                start_idx = max(0, i - 2)
+                end_idx = min(len(words), i + 3)
+                surrounding_words = words[start_idx:i] + words[i+1:end_idx]
+                if not list(set(signs) & set(surrounding_words)):
                     words[i] = "1**1" + words[i] + "1**1"
 
         return ' '.join(words)
@@ -138,13 +139,13 @@ class RegexClassifier(object):
         self.url_regex = r"\b((https|http|ftp):\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)\b"
 
     def match_phone(self):
-        self.cities_phone_prefix = "(41|44|45|31|84|77|21|38|51|56|58|61|24|23|54|71|26|25|28|87|34|83|74|17|13|66|11|86|76|81)"
+        self.province_phone_prefix = "(11|13|17|21|23|24|25|26|28|31|34|35|38|41|44|45|51|54|56|58|61|66|71|74|76|77|81|83|84|86|87)"
         mobile_pattern = "(0|((\+98)[- ]?|(\(\+98\))[- ]?))?9([01239][0-9])[- ]?[0-9]{3}[- ]?[0-9]{4}"
-        phone_pattern = f"(0|(((\+98)|(\(\+98\)))[- ]?))?(({self.cities_phone_prefix}|(\({self.cities_phone_prefix}\)))[- ]?)?[0-9]{{1,4}} ?[0-9]{{4}}"
-        phone_without_country_pattern = f"(((0?{self.cities_phone_prefix})|(\(0?{self.cities_phone_prefix}\)))[- ]?)?[0-9]{{1,4}} ?[0-9]{{4}}"  # ----->   (021)7782540555
+        phone_pattern = f"(0|(((\+98)|(\(\+98\)))[- ]?))?(({self.province_phone_prefix}|(\({self.province_phone_prefix}\)))[- ]?)?[0-9]{{1,4}} ?[0-9]{{4}}"
+        phone_without_country_pattern = f"(((0?{self.province_phone_prefix})|(\(0?{self.province_phone_prefix}\)))[- ]?)?[0-9]{{1,4}} ?[0-9]{{4}}"  # ----->   (021)7782540555
         phone_three_digit = "\\b(110|112|113|114|115|123|125|111|116|118|120|121|122|124|129|131|132|133|134|136|137|141|162|190|191|192|193|194|195|197|199)\\b"
         phone_three_digit_word = " صد و ده|صد و دوازده|صد و سیزده|صد و چهارده|صد و پانزده|صد و بیست و سه|صد و بیست و پنج|صد و یازده|صد و شانزده|صد و هجده|صد و بیست|صد و بیست و یک|صد و بیست و دو|صد و بیست و چهار|صد و بیست و نه|صد و سی یک|صد و سی و دو|صد و سی و سه|صد و سی و چهار|صد و سی و شش|صد و سی هفت|صد و چهل و یک|صد و شصت و دو|صد و نود|صد و نود و یک|صد و نود و دو|صد و نود و سه|صد و نود و چهار|صد و نود و پنج|صد و نود و هفت|صد و نود و نه"
-        phone_four_digit = f"((0?{self.cities_phone_prefix}|\(0?{self.cities_phone_prefix}\))[- ]?)[1-9][0-9]{{3}}|([3-9]\d{{3}}|2[1-9]\d{{2}})"
+        phone_four_digit = f"((0?{self.province_phone_prefix}|\(0?{self.province_phone_prefix}\))[- ]?)[1-9][0-9]{{3}}|([3-9]\d{{3}}|2[1-9]\d{{2}})"
         
         self.phone_regex = f"(({mobile_pattern})|({phone_pattern})|({phone_without_country_pattern})|({phone_three_digit})|({phone_three_digit_word})|({phone_four_digit}))"
     
@@ -178,30 +179,25 @@ class RegexClassifier(object):
         c = conn.cursor()
         c.execute("SELECT * FROM patterns")
         patterns = c.fetchall()
-        matches = {}
+        matches = []
         for name, pattern in patterns:
-            matches[name] = []
             for match in (re.finditer(pattern, string)):
-                matches[name].append(match.group())
-                matches[name].append(match.span())
+                match_dict = {
+                    "type": name,
+                    "value": match.group(),
+                    "span": match.span()
+                }
                 if name == 'address':
                     try:
                         location = self.get_location_details(match.group())
                         if location:
-                            matches[name].append(f"(Latitude: {location['lat']}, Longitude: {location['lon']})")
+                            match_dict["location"] = f"(Latitude: {location['lat']}, Longitude: {location['lon']})"
                     except:
                         pass
-            matches['message_length'] = self.classify_message_length(string)
+                matches.append(match_dict)
         conn.close()
 
-#        output = []
-#         for name, match_list in matches.items():
-#             if match_list:
-#                 output.append(f"{name.capitalize()}:")
-#                 for match in match_list:
-#                     output.append(f"- {match}")
-
-#         return "\n".join(output)
+        matches.append({"type": "message_length", "value": self.classify_message_length(string)})
         return matches
 
     def match_input_pattern(self, text, pattern):
@@ -212,79 +208,81 @@ class RegexClassifier(object):
             matches.append([match.group(), match.span()])
         return matches
 
-
     def extract_regex_pattern(self, examples):
-        # Tokenize the examples and analyze character positions
-        tokenized_examples = [list(example) for example in examples]
-        max_length = max(len(example) for example in examples)
+        # Tokenize the examples into segments based on changes between digits, letters, and special characters
+        def tokenize(example):
+            tokens = []
+            current_token = example[0]
+            for char in example[1:]:
+                if (char.isdigit() and current_token[-1].isdigit()) or \
+                (char.isalpha() and current_token[-1].isalpha()) or \
+                (not char.isalnum() and not current_token[-1].isalnum()):
+                    current_token += char
+                else:
+                    tokens.append(current_token)
+                    current_token = char
+            tokens.append(current_token)
+            return tokens
 
-        # Initialize data structures for analysis
-        position_char_counts = [Counter() for _ in range(max_length)]
-        length_counts = Counter(len(example) for example in examples)
+        tokenized_examples = [tokenize(example) for example in examples]
+        max_segments = max(len(example) for example in tokenized_examples)
 
+        # Normalize token lengths by padding with empty strings
         for example in tokenized_examples:
-            for i, char in enumerate(example):
-                position_char_counts[i][char] += 1
+            while len(example) < max_segments:
+                example.append("")
 
-        # Initialize an empty pattern list
-        pattern = []
-
-        # Analyze character positions for optional and repeated characters
-        i = 0
-        while i < max_length:
-            char_count = position_char_counts[i]
-            total_examples = len(examples)
-
-            if len(char_count) == 1:
-                # Single unique character at this position
-                char = next(iter(char_count))
-                if char_count[char] == total_examples:
-                    # Mandatory character
-                    pattern.append(re.escape(char))
-                    i += 1
+        # Analyze segments
+        segment_patterns = []
+        for i in range(max_segments):
+            segment_chars = [example[i] for example in tokenized_examples]
+            if all(seg == segment_chars[0] for seg in segment_chars):
+                # Exact match segment
+                segment_patterns.append(re.escape(segment_chars[0]))
+            elif all(seg.isdigit() for seg in segment_chars):
+                # Digit segment
+                lengths = [len(seg) for seg in segment_chars]
+                min_len = min(lengths)
+                max_len = max(lengths)
+                if min_len == max_len:
+                    segment_patterns.append(r'\d{' + str(min_len) + '}')
                 else:
-                    # Optional character
-                    pattern.append(re.escape(char) + '?')
-                    i += 1
+                    segment_patterns.append(r'\d{' + str(min_len) + ',' + str(max_len) + '}')
+            elif all(seg.isalpha() for seg in segment_chars):
+                # Letter segment
+                lengths = [len(seg) for seg in segment_chars]
+                min_len = min(lengths)
+                max_len = max(lengths)
+                if min_len == max_len:
+                    segment_patterns.append(r'[a-zA-Z]{' + str(min_len) + '}')
+                else:
+                    segment_patterns.append(r'[a-zA-Z]{' + str(min_len) + ',' + str(max_len) + '}')
+            elif all(not seg.isalnum() for seg in segment_chars):
+                # Special character segment
+                unique_chars = set(seg for seg_list in segment_chars for seg in seg_list)
+                if len(unique_chars) == 1:
+                    char = re.escape(next(iter(unique_chars)))
+                    lengths = [len(seg) for seg in segment_chars]
+                    min_len = min(lengths)
+                    max_len = max(lengths)
+                    if min_len == max_len:
+                        segment_patterns.append(char + '{' + str(min_len) + '}')
+                    else:
+                        segment_patterns.append(char + '{' + str(min_len) + ',' + str(max_len) + '}')
+                else:
+                    segment_patterns.append('.{' + str(min(len(seg) for seg in segment_chars)) + ',' + str(max(len(seg) for seg in segment_chars)) + '}')
             else:
-                # Multiple characters at this position, need to generalize
-                if all(i < len(example) and example[i].isdigit() for example in tokenized_examples):
-                    # Check for repeated digits
-                    j = i
-                    while j < max_length and all(j < len(example) and example[j].isdigit() for example in tokenized_examples):
-                        # print(f"i: {i}, j: {j}, example[j]: {example[j]}")
-                        j += 1
-                    repeat_count = j - i
-                    if repeat_count > 1:
-                        pattern.append(r'\d{' + str(repeat_count) + '}')
-                    else:
-                        pattern.append(r'\d')
-                    i = j
-                elif all(i < len(example) and example[i].isalpha() for example in tokenized_examples):
-                    # Check for repeated letters
-                    j = i
-                    while j < max_length and all(j < len(example) and example[j].isalpha() for example in tokenized_examples):
-                        # print(f"i: {i}, j: {j}, example[j]: {example[j]}")
-                        j += 1
-                    repeat_count = j - i
-                    if repeat_count > 1:
-                        pattern.append(r'[a-zA-Z]{' + str(repeat_count) + '}')
-                    else:
-                        pattern.append(r'[a-zA-Z]')
-                    i = j
-                else:
-                    # Handle mixed or special characters
-                    j = i
-                    while j < max_length and all(j < len(example) for example in tokenized_examples) and not all(example[j].isalnum() for example in tokenized_examples):
-                        # print(f"i: {i}, j: {j}, example[j]: {example[j]}")
-                        j += 1
-                    repeat_count = j - i
-                    if repeat_count > 1:
-                        pattern.append('.{' + str(repeat_count) + '}')
-                    else:
-                        pattern.append('.')
-                        if i == j:
-                            j += 1
-                    i = j
+                # Mixed segment
+                segment_patterns.append('.{' + str(min(len(seg) for seg in segment_chars)) + ',' + str(max(len(seg) for seg in segment_chars)) + '}')
 
-        return ''.join(pattern)
+        # Simplify pattern by removing unnecessary braces
+        simplified_pattern = []
+        for part in segment_patterns:
+            if '{1}' in part:
+                simplified_pattern.append(part.replace('{1}', ''))
+            elif ',' in part and part.endswith(',}'):
+                simplified_pattern.append(part.replace(',}', '}'))
+            else:
+                simplified_pattern.append(part)
+
+        return ''.join(simplified_pattern)
