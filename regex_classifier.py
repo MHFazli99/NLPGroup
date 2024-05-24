@@ -13,13 +13,11 @@ class RegexClassifier(object):
         
         self.match_address()
         self.match_email()
-        self.match_url()
         self.match_phone()
         
         self.create_db()
         self.add_pattern('address', self.address_regex)
         self.add_pattern('email', self.email_regex)
-        self.add_pattern('url', self.url_regex)
         self.add_pattern('phone', self.phone_regex)
         
     def __load_dicts(self):
@@ -91,6 +89,20 @@ class RegexClassifier(object):
 
         return ' '.join(words)
     
+    def tokenize(self, example):
+        tokens = []
+        current_token = example[0]
+        for char in example[1:]:
+            if (char.isdigit() and current_token[-1].isdigit()) or \
+            (char.isalpha() and current_token[-1].isalpha()) or \
+            (not char.isalnum() and not current_token[-1].isalnum()):
+                current_token += char
+            else:
+                tokens.append(current_token)
+                current_token = char
+        tokens.append(current_token)
+        return tokens
+    
     def classify_message_length(self, text: str):
         words = text.split(" ")
         if len(words) <= 20:
@@ -133,21 +145,20 @@ class RegexClassifier(object):
         self.address_regex = f'({self.pattern.format(keyword_count="1,10", spaces_count="0,20")})|({self.locations})'
 
     def match_email(self):
-        self.email_regex = r"\b(\w+([-+(\.|\[dot\])']\w+)*(@|\[at\])\w+([-(\.|\[dot\])]\w+)*(\.|\[dot\])\w+([-(\.|\[dot\])]\w+)*)\b"
+        self.email_regex = r"\b(\w+([-+%(\.|\[dot\])]\w+)*(@|\[at\])([A-Za-z0-9-]+(\.|\[dot\]))+[A-Z|a-z]{2,}(?![.]))\b"
         
-    def match_url(self):
-        self.url_regex = r"\b((https|http|ftp):\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)\b"
-
     def match_phone(self):
+        self.mobile_prefix = "(1[0-9]|9[012346]|3[0-9]|0[0-5]|41|2[0-3]|991[0134]|981[0-7]|998|990|9999?)"
+        mobile_pattern = f"(0|((\+98)[- ]?|(\(\+98\))[- ]?))?9{self.mobile_prefix}[- ]?[0-9]{{3}}[- ]?[0-9]{{4}}"
+
         self.province_phone_prefix = "(11|13|17|21|23|24|25|26|28|31|34|35|38|41|44|45|51|54|56|58|61|66|71|74|76|77|81|83|84|86|87)"
-        mobile_pattern = "(0|((\+98)[- ]?|(\(\+98\))[- ]?))?9([01239][0-9])[- ]?[0-9]{3}[- ]?[0-9]{4}"
-        phone_pattern = f"(0|(((\+98)|(\(\+98\)))[- ]?))?(({self.province_phone_prefix}|(\({self.province_phone_prefix}\)))[- ]?)?[0-9]{{1,4}} ?[0-9]{{4}}"
-        phone_without_country_pattern = f"(((0?{self.province_phone_prefix})|(\(0?{self.province_phone_prefix}\)))[- ]?)?[0-9]{{1,4}} ?[0-9]{{4}}"  # ----->   (021)7782540555
-        phone_three_digit = "\\b(110|112|113|114|115|123|125|111|116|118|120|121|122|124|129|131|132|133|134|136|137|141|162|190|191|192|193|194|195|197|199)\\b"
-        phone_three_digit_word = " صد و ده|صد و دوازده|صد و سیزده|صد و چهارده|صد و پانزده|صد و بیست و سه|صد و بیست و پنج|صد و یازده|صد و شانزده|صد و هجده|صد و بیست|صد و بیست و یک|صد و بیست و دو|صد و بیست و چهار|صد و بیست و نه|صد و سی یک|صد و سی و دو|صد و سی و سه|صد و سی و چهار|صد و سی و شش|صد و سی هفت|صد و چهل و یک|صد و شصت و دو|صد و نود|صد و نود و یک|صد و نود و دو|صد و نود و سه|صد و نود و چهار|صد و نود و پنج|صد و نود و هفت|صد و نود و نه"
-        phone_four_digit = f"((0?{self.province_phone_prefix}|\(0?{self.province_phone_prefix}\))[- ]?)[1-9][0-9]{{3}}|([3-9]\d{{3}}|2[1-9]\d{{2}})"
+        phone_pattern = f"(0|(((\+98)|(\(\+98\)))[- ]?))?(({self.province_phone_prefix}|(\({self.province_phone_prefix}\)))[- ]?)?[0-9]{{8}}"
         
-        self.phone_regex = f"(({mobile_pattern})|({phone_pattern})|({phone_without_country_pattern})|({phone_three_digit})|({phone_three_digit_word})|({phone_four_digit}))"
+        phone_three_digit = "\\b(110|112|113|114|115|123|125|111|116|118|120|121|122|124|129|131|132|133|134|136|137|141|162|190|191|192|193|194|195|197|199)\\b"
+        phone_three_digit_word = " صد و ده|صد و دوازده|صد و سیزده|صد و چهارده|صد و پانزده|صد و بیست و سه|صد و بیست و پنج|صد و یازده|صد و شانزده|صد و هجده|صد و بیست|صد و بیست و یک|صد و بیست و دو|صد و بیست و چهار|صد و بیست و نه|صد و سی یک|صد و سی و دو|صد و سی و سه|صد و سی و چهار|صد و سی و شش|صد و سی هفت|صد و چهل و یک|صد و شصت و دو|صد و نود|صد و نود و یک|صد و نود و دو|صد و نود و سه\|صد و نود و چهار|صد و نود و پنج|صد و نود و هفت|صد و نود و نه"
+        phone_four_digit = r"\b(1[4-8][0-9]{2})\b"
+        
+        self.phone_regex = f"(({mobile_pattern})|({phone_pattern})|({phone_three_digit})|({phone_three_digit_word})|({phone_four_digit}))"
     
     def load_regex(self):
         conn = sqlite3.connect('regexDB.db')
@@ -173,15 +184,17 @@ class RegexClassifier(object):
         conn.close()
 
     def match_patterns(self, text: str):
-        string = self.standardize_query(text)
-        string = self.specify_ambiguity_locations(string)
+        text = self.standardize_query(text)
+        text = self.specify_ambiguity_locations(text)
+        text = text.replace("\u200C", " ")
+        text = self.normalize_number(text)
         conn = sqlite3.connect('regexDB.db')
         c = conn.cursor()
         c.execute("SELECT * FROM patterns")
         patterns = c.fetchall()
         matches = []
         for name, pattern in patterns:
-            for match in (re.finditer(pattern, string)):
+            for match in (re.finditer(pattern, text)):
                 match_dict = {
                     "type": name,
                     "value": match.group(),
@@ -197,7 +210,7 @@ class RegexClassifier(object):
                 matches.append(match_dict)
         conn.close()
 
-        matches.append({"type": "message_length", "value": self.classify_message_length(string)})
+        matches.append({"type": "message_length", "value": self.classify_message_length(text)})
         return matches
 
     def match_input_pattern(self, text, pattern):
@@ -209,22 +222,27 @@ class RegexClassifier(object):
         return matches
 
     def extract_regex_pattern(self, examples):
-        # Tokenize the examples into segments based on changes between digits, letters, and special characters
-        def tokenize(example):
-            tokens = []
-            current_token = example[0]
-            for char in example[1:]:
-                if (char.isdigit() and current_token[-1].isdigit()) or \
-                (char.isalpha() and current_token[-1].isalpha()) or \
-                (not char.isalnum() and not current_token[-1].isalnum()):
-                    current_token += char
-                else:
-                    tokens.append(current_token)
-                    current_token = char
-            tokens.append(current_token)
-            return tokens
 
-        tokenized_examples = [tokenize(example) for example in examples]
+        self.lookup_table = {
+            'date_mm_dd_yyyy': r'\b\d{1,2}/\d{1,2}/\d{4}\b',
+            'date_dd_mm_yyyy': r'\b\d{1,2}-\d{1,2}-\d{4}\b',
+            'date_yyyy_mm_dd': r'\b\d{4}[-\/]\d{1,2}[-\/]\d{1,2}\b',
+            'time_hh_mm': r'\b\d{1,2}:\d{2}\b',
+            'time_hh_mm_ss': r'\b\d{1,2}:\d{2}:\d{2}\b',
+            'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+            'url': r"\b((https|http|ftp):\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)\b",
+            'postal_code': r'\d{5}[\-]?\d{5}',
+            'mobile_pattern': r"(0|((\+98)[- ]?|(\(\+98\))[- ]?))?9([01239][0-9])[- ]?[0-9]{3}[- ]?[0-9]{4}",
+            'ipv4': r'\b(?:\d{1,3}\.){3}\d{1,3}\b',
+            'ipv6': r'\b([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b',
+            'persian_name': r"^[\u0600-\u06FF\s]+$"
+        }
+
+        for _, pattern in self.lookup_table.items():
+            if all(re.match(pattern, example) for example in examples):
+                return pattern
+
+        tokenized_examples = [self.tokenize(example) for example in examples]
         max_segments = max(len(example) for example in tokenized_examples)
 
         # Normalize token lengths by padding with empty strings
