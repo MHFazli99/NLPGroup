@@ -19,3 +19,5 @@ skills:
     path: skills/match_regex.py
   add_regex:
     path: skills/add_regex.py
+  extract_regex:
+    path: skills/extract_regex.py
