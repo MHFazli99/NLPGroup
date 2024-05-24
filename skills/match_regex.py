@@ -1,5 +1,5 @@
 from opsdroid.skill import Skill
-from opsdroid.matchers import match_regex
+from opsdroid.matchers import match_parse
 
 import os
 import sys
@@ -9,18 +9,17 @@ from regex_classifier import *
 from utils import prettify_matches
 
 class MatchAll(Skill):
-    @match_regex(r'^match ')
+    @match_parse('match {text}')
     async def match(self, message):
         print("---RECEIVED MATCH-ALL COMMAND---")
         regex_clf = RegexClassifier()
-        matches = regex_clf.match_patterns(message.text.split()[1])
+        matches = regex_clf.match_patterns(message.entities['text']['value'])
         await message.respond(prettify_matches(matches))
 
 class MatchRegex(Skill):
-    @match_regex(r'^match_regex ')
+    @match_parse('match_regex {text} {pattern}')
     async def match(self, message):
         print("---RECEIVED MATCH-REGEX COMMAND---")
         regex_clf = RegexClassifier()
-        cmd = message.text.split()
-        matches = regex_clf.match_input_pattern(cmd[1], cmd[2])
-        await message.respond(prettify_matches(matches))
+        matches = regex_clf.match_input_pattern(message.entities['text']['value'], message.entities['pattern']['value'])
+        await message.respond(str(matches))
