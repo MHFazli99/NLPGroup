@@ -22,4 +22,7 @@ class MatchRegex(Skill):
         print("---RECEIVED MATCH-REGEX COMMAND---")
         regex_clf = RegexClassifier()
         matches = regex_clf.match_input_pattern(message.entities['text']['value'], message.entities['pattern']['value'])
-        await message.respond(str(matches))
+        if matches:
+            await message.respond("Regex matches the input")
+        else:
+            await message.respond("Regex doesn't match input")

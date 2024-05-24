@@ -168,7 +168,6 @@ class RegexClassifier(object):
         c = conn.cursor()
         c.execute('''CREATE TABLE IF NOT EXISTS patterns
                  (name text, pattern text)''')
-        c.execute("DELETE FROM patterns")
         conn.commit()
         conn.close()
         
