@@ -16,6 +16,6 @@ skills:
   accept_invites:
     path: skills/accept_invite.py
   match_regex:
-    path: skills/regex_match.py
+    path: skills/match_regex.py
   add_regex:
     path: skills/add_regex.py
