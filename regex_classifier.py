@@ -1,7 +1,6 @@
 import re
 import pickle
 import sqlite3 
-import geopy
 from geopy.geocoders import Nominatim
 from collections import defaultdict, Counter
 
