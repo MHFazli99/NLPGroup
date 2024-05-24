@@ -8,7 +8,7 @@ sys.path.append(os.getcwd())
 from regex_classifier import *
 
 class MatchAll(Skill):
-    @match_regex(r'^match')
+    @match_regex(r'^match ')
     async def match(self, message):
         print("---RECEIVED MATCH-ALL COMMAND---")
         regex_clf = RegexClassifier()
@@ -16,7 +16,7 @@ class MatchAll(Skill):
         await message.respond(str(matches))
 
 class MatchRegex(Skill):
-    @match_regex(r'^match_regex')
+    @match_regex(r'^match_regex ')
     async def match(self, message):
         print("---RECEIVED MATCH-REGEX COMMAND---")
         regex_clf = RegexClassifier()
