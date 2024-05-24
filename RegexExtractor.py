@@ -8,7 +8,7 @@ from collections import defaultdict, Counter
 class RegexClassifier(object):
     
     def __init__(self):
-        self.resources = r"C:\Users\Mohammad\Desktop\address_extractor"
+        self.resources = r"resources"
         self.__load_dicts()
         
         self.match_address()

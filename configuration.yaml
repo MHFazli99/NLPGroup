@@ -15,3 +15,5 @@ skills:
     path: skills/tooti_skill.py
   accept_invites:
     path: skills/accept_invite.py
+  match_skill:
+    path: skills/regex_match.py
