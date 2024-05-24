@@ -29,10 +29,6 @@ class RegexClassifier(object):
             province = [str(name) for name in pickle.load(f)]
             self.province = "\\b(" + '|'.join(province) + ")\\b"
 
-        with open("{0}/phone_prefix.pickle".format(self.resources), "rb") as f:
-            phone_prefix = [str(name) for name in pickle.load(f)]
-            self.phone_prefix = "(" + '|'.join(phone_prefix) + ")"
-
         with open("{0}/cities.pickle".format(self.resources), "rb") as f:
             self.cities = [str(name) for name in pickle.load(f)]
             self.cities = "\\b(" + '|'.join(self.cities) + ")\\b"
@@ -216,8 +212,9 @@ class RegexClassifier(object):
     def match_input_pattern(self, text, pattern):
         string = self.standardize_query(text)
         string = self.specify_ambiguity_locations(string)
+        full_pattern = f"^{pattern}$"
         matches = []
-        for match in (re.finditer(pattern, string)):
+        for match in (re.finditer(full_pattern, string)):
             matches.append([match.group(), match.span()])
         return matches
 
