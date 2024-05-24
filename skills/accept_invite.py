@@ -5,8 +5,10 @@ from opsdroid.events import UserInvite, JoinRoom, Message
 
 WELCOME_MESSAGE = '''
 سلام! این بازوی دسته‌بند رجکس است. شما می‌توانید چندین کار را اینجا انجام دهید:
-1. match "text"
+1. match #text
 با وارد کردن این دستور می‌توانید ایمیل‌ها، شماره‌تلفن‌ها و آدرس‌های موجود در text را استخراج کنید.
+2. add_regex #regex #name
+یک رجکس جدید با اسم name ذخیره کنید.
 '''
 
 
