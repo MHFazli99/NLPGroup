@@ -5,7 +5,7 @@ import os
 import sys
 sys.path.append(os.getcwd())
 
-from RegexExtractor import *
+from regex_classifier import *
 
 class RegexMatchSkill(Skill):
     @match_regex(r'^match')
